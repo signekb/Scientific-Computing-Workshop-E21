@@ -39,11 +39,21 @@ class NeuralNetwork:
                 While the last layer should contain 10 nodes. Corresponding to the number of output classes. Example input:
                 [784, 30, 10]
         """
-        ## init biases
-        # self.biases = ...
-        ## init list of weight matrices
-        # self.weights = ...
+        ## init biases - in a list: [bL1, bL2]
+        self.biases = [np.random.normal(size=layers[1]),np.random.normal(size=layers[2])]
+        #np.reshape(self.biases,()
+        self.biases[0] = np.reshape(self.biases[0],(30,1))
+        self.biases[1] = np.reshape(self.biases[1],(10,1))
+        # reshape bias 
+        # self.biases.reshape(-1,1) 
 
+        ## init list of weight matrices - in a list: [wL1, wL2]
+        # 784 weights for 30 nodes = 30 x 784 matrix
+        self.weights = [np.random.normal(size=(layers[1],layers[0])),np.random.normal(size=(layers[2],layers[1]))]
+
+        ## n_layers
+        self.n_layers = len(layers)
+    
     def forward(self, X: np.ndarray) -> np.ndarray:
         """Performs the feedforward pass of the neural network.
 
@@ -61,7 +71,19 @@ class NeuralNetwork:
             # apply the activation function
         
         # feel free to do this as a for loop if you wish to begin with.
-        pass
+        a_layer = X
+        # loop over layers
+        for layer in range(len(self.biases)):
+            w_layer = self.weights[layer]
+            b_layer = self.biases[layer]
+            a_list = []
+            # loop over nodes in current layer
+            for weight, bias in zip(w_layer,b_layer):
+                a_node = sigmoid(np.dot(weight,a_layer)+bias)
+                a_list.append(a_node)
+            a_layer = a_list
+        prediction = a_layer
+        return prediction # 10 activations from the 10 output nodes
 
     # static methods simply mean that it does not take in self as an argument,
     # thus have not access to the class it is essentially just a function attached to the class
@@ -77,7 +99,7 @@ class NeuralNetwork:
         sum((f(x) - a)^2) / n
 
         where n is the number of observations, f(x) is the output of the neural
-        network and a is the actual result. The thing within the sum the the
+        network and a is the actual result. The thing within the sum is the
         mean squared error.
 
         Args:
@@ -86,7 +108,8 @@ class NeuralNetwork:
         Returns:
             np.ndarray: The loss/cost
         """
-        pass
+        n = len(output)
+        return sum((output-actual)**2) / n
 
     def SGD(
         self,
@@ -142,7 +165,7 @@ class NeuralNetwork:
             dn_weights = [np.zeros(w.shape) for w in self.weights]
 
             ### feedforward - where we save relevant variables
-            x = pixels
+            x = pixels.copy()
             activations = [pixels]  # a list of all the layer activation (with sigmoid)
             zs = []  # list of activations, one for each layer (without sigmoid)
 
@@ -188,18 +211,25 @@ class NeuralNetwork:
 
         Args:
             data (list): A list of tuples of size 2, where the first element is the input
-                for MNIST this is pixels and the second element is the correct answer
+                for MNIST (this is pixels) and the second element is the correct answer
                 (e.g. what digit it is) response.
 
         Returns:
-            Tuple[int, int]: A tuple where the first entry it the number of correct and the second entry
+            Tuple[int, int]: A tuple where the first entry is the number of correct and the second entry
                 is the total number of predictions.
         """
         # for each sample in data
             # do a forward pass
             # compare the output with the answer
         # return number of correct and total number of predictions.
-        pass
+
+        # for each sample in data
+        for idx, sample in enumerate(data):
+            # do a forward pass
+            forward_pass = network.forward(X = sample[0])
+            # compare the output with the answer
+            cost = network.cost(forward_pass, sample[1])
+
 
 
 if __name__ == "__main__":
@@ -210,24 +240,35 @@ if __name__ == "__main__":
     train_data, val_data, test_data = mnist_loader.load_data_wrapper()
 
     ## init your neural network
-    # network = NeuralNetwork([784, 30, 10])
-
+    network = NeuralNetwork([784, 30, 10])
     ## test forward pass on one example
-    # pixels = train_data[0][0] # one example
-    # answer = train_data[0][1]
-    # output = network.forward(X=pixels)
+    pixels = train_data[0][0] # one example - picture
+    answer = train_data[0][1]
+    output = network.forward(X=pixels)
 
     ## calculate the cost
-    # cost = network.cost(output, actual=answer)
+    cost = network.cost(output, actual=answer)
 
     ## train using backprop.
     ## (this should be very slow with stachostic gradient descent)
-    # for i in range(10):
-    #     network.backprop(train_data, learning_rate=3)
-    #     print(network.evaluate(val_data))
-
+    #for i in range(10):
+    #    network.backprop(train_data, learning_rate=3)
+    #    print(network.evaluate(val_data))
+    print(network.evaluate(val_data))
     ## train for one epoch
     # network.SGD(train_data=train_data, epochs=1)
     
     ## evaluate the performance:
     # print(network.evaluate(val_data))
+
+
+'''
+note about generators
+def my_range():
+    print("start running")
+    i = 0
+    while i <= 10: 
+        yield i 
+        i += 1
+list(my_range)
+'''
